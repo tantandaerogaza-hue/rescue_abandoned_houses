@@ -66,6 +66,7 @@ from streamlit.testing.v1.element_tree import (
     Header,
     Image,
     Info,
+    InitialValue,
     Json,
     Latex,
     Markdown,
@@ -78,6 +79,7 @@ from streamlit.testing.v1.element_tree import (
     Selectbox,
     SelectSlider,
     Slider,
+    Space,
     Status,
     Subheader,
     Success,
@@ -92,6 +94,10 @@ from streamlit.testing.v1.element_tree import (
     Toggle,
     Warning,  # noqa: A004
     WidgetList,
+    _form_clear_flags,
+    _submitted_form_ids,
+    _use_form_clear_defaults,
+    _widget_form_id,
     repr_,
 )
 from streamlit.testing.v1.local_script_runner import LocalScriptRunner
@@ -112,6 +118,21 @@ if TYPE_CHECKING:
     from streamlit.source_util import PageHash, PageInfo
 
 TMP_DIR = tempfile.TemporaryDirectory()
+
+
+def _query_params_from_query_string(query_string: str) -> dict[str, str | list[str]]:
+    """Parse a query string into the value shapes a test author assigns to ``AppTest.query_params``.
+
+    Single values become ``str`` so ``at.query_params["x"] = "1"`` round-trips.
+    Repeated keys stay ``list[str]`` so the next run still encodes each value
+    as its own ``key=value`` pair. Blank values (``?foo=``) are kept as ``""``
+    rather than dropped.
+    """
+    parsed = parse.parse_qs(query_string, keep_blank_values=True)
+    # Same single-value unwrap as QueryParams.populate_from_query_string.
+    return {
+        key: values[0] if len(values) == 1 else values for key, values in parsed.items()
+    }
 
 
 class _AppTestSessionState:
@@ -245,8 +266,12 @@ class AppTest:
         ``keys``, ``items``, ``values``, ``to_dict``, ``len``, and iteration.
 
     query_params: dict[str, Any]
-        Dictionary of query parameters to be used by the simulated app. Use
-        dict-like syntax to set ``query_params`` values for the simulated app.
+        Dictionary of query parameters for the simulated app. Use dict-like
+        syntax to set values before ``.run()``. After ``.run()``, a single
+        occurrence is ``str`` (a one-element list collapses to ``str``),
+        blank values are preserved as ``""``, and repeated keys stay
+        ``list[str]``. That last case differs from ``st.query_params``,
+        which returns only the last value.
     """
 
     def __init__(
@@ -278,6 +303,10 @@ class AppTest:
         # still resolvable by callbacks that fire before the script body
         # re-registers them in the next run.
         self._fragment_storage = MemoryFragmentStorage()
+        # Form ids whose last submit used clear_on_submit. The next submit of
+        # those forms serializes proto defaults for widgets the test has not
+        # set, matching frontend pending-clear without an extra rerun.
+        self._cleared_form_ids: set[str] = set()
 
         tree = ElementTree()
         tree._runner = self
@@ -515,7 +544,7 @@ class AppTest:
                 self._registered_pages = new_pages
         # Last event is SHUTDOWN, so the corresponding data includes query string
         query_string = script_runner.event_data[-1]["client_state"].query_string
-        self.query_params = parse.parse_qs(query_string)
+        self.query_params = _query_params_from_query_string(query_string)
 
         if self.secrets:
             if st.secrets._secrets is not None:
@@ -529,13 +558,32 @@ class AppTest:
         """Register files from FileUploader widgets with the file manager."""
         from streamlit.runtime.uploaded_file_manager import UploadedFileRec
 
+        submitted = _submitted_form_ids(self._tree)
+        form_clears = _form_clear_flags(self._tree)
         for widget in self._tree.file_uploader:
+            form_id = _widget_form_id(widget)
+            saved_files = widget._files
+            if form_id and form_id not in submitted:
+                # Re-register only the files committed by the last submit;
+                # newly staged uploads wait for this form's submit button.
+                widget._files = InitialValue()
+            elif _use_form_clear_defaults(
+                widget,
+                submitted=submitted,
+                cleared=self._cleared_form_ids,
+                form_clears=form_clears,
+            ):
+                continue
+            try:
+                files_to_register = widget._get_files_to_register()
+            finally:
+                widget._files = saved_files
             for (
                 file_id,
                 filename,
                 content,
                 mime_type,
-            ) in widget._get_files_to_register():
+            ) in files_to_register:
                 file_rec = UploadedFileRec(
                     file_id=file_id,
                     name=filename,
@@ -1208,6 +1256,20 @@ class AppTest:
         return self._tree.slider
 
     @property
+    def space(self) -> ElementList[Space]:
+        """Sequence of all ``st.space`` elements.
+
+        Returns
+        -------
+        ElementList of Space
+            Sequence of all ``st.space`` elements. Individual elements can be
+            accessed from an ElementList by index (order on the page). For
+            example, ``at.space[0]`` for the first element. Space is an
+            extension of the Element class.
+        """
+        return self._tree.space
+
+    @property
     def subheader(self) -> ElementList[Subheader]:
         """Sequence of all ``st.subheader`` elements.
 
@@ -1408,24 +1470,25 @@ class AppTest:
         """Get elements or widgets of the specified type.
 
         This method returns the collection of all elements or widgets of
-        the specified type on the current page. Retrieve a specific element by
-        using its index (order on page) or key lookup.
+        the specified type on the current page. Retrieve a specific element
+        by index. Key lookup lives on typed collections
+        (``at.slider(key=...)``) or ``get_by_key``.
 
         Parameters
         ----------
         element_type: str
-            An element attribute of ``AppTest``. For example, "button",
-            "caption", or "chat_input".
+            An ``AppTest`` collection name such as ``"button"``,
+            ``"datetime_input"``, ``"pills"``, or ``"tabs"``. Internal node
+            type names such as ``"date_time_input"`` also work. ``"help"``
+            selects ``st.help`` elements (node type ``help_info``).
 
         Returns
         -------
         Sequence of Elements
-            Sequence of elements of the given type. Individual elements can
-            be accessed from a Sequence by index (order on the page). When
-            getting and ``element_type`` that is a widget, individual widgets
-            can be accessed by key. For example, ``at.get("text")[0]`` for the
-            first ``st.text`` element or ``at.get("slider")(key="my_key")`` for
-            the ``st.slider`` widget with a given key.
+            Sequence of matching nodes, accessed by index. For example,
+            ``at.get("text")[0]`` for the first ``st.text`` element. Widgets
+            with a key are looked up on the typed collection
+            (``at.slider(key="my_key")``) or with ``get_by_key``.
         """
         return self._tree.get(element_type)
 

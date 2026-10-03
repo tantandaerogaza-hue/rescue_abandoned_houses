@@ -24,10 +24,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -47,7 +47,7 @@ class EChartsChart(_message.Message):
         """SVG renderer."""
 
     class Renderer(_Renderer, metaclass=_RendererEnumTypeWrapper):
-        """Next ID: 7
+        """Next ID: 8
 
         Available renderers:
         """
@@ -61,6 +61,7 @@ class EChartsChart(_message.Message):
     THEME_FIELD_NUMBER: _builtins.int
     ID_FIELD_NUMBER: _builtins.int
     RENDERER_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     spec: _builtins.str
     """JSON-serialized ECharts option object."""
     theme: _builtins.str
@@ -73,6 +74,10 @@ class EChartsChart(_message.Message):
     """
     renderer: Global___EChartsChart.Renderer.ValueType
     """Renderer passed to echarts.init."""
+    alt: _builtins.str
+    """Accessible name for the chart (author `alt`). Applied on the frontend as
+    ECharts `aria.label.description` (→ aria-label on role="img").
+    """
     def __init__(
         self,
         *,
@@ -80,11 +85,14 @@ class EChartsChart(_message.Message):
         theme: _builtins.str = ...,
         id: _builtins.str = ...,
         renderer: Global___EChartsChart.Renderer.ValueType = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["id", b"id", "renderer", b"renderer", "spec", b"spec", "theme", b"theme"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "id", b"id", "renderer", b"renderer", "spec", b"spec", "theme", b"theme"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___EChartsChart: _TypeAlias = EChartsChart  # noqa: Y015

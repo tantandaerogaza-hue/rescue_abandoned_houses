@@ -23,10 +23,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -37,23 +37,32 @@ class GraphVizChart(_message.Message):
     SPEC_FIELD_NUMBER: _builtins.int
     ELEMENT_ID_FIELD_NUMBER: _builtins.int
     ENGINE_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     spec: _builtins.str
     """A specification of the GraphViz graph in the "Dot" language."""
     element_id: _builtins.str
     """A unique ID of this element."""
     engine: _builtins.str
     """The engine used to layout and render the graph."""
+    alt: _builtins.str
+    """Author-provided description of the chart, exposed to assistive
+    technologies as the accessible name. Unset when omitted or when an empty /
+    whitespace-only value was normalized away in Python.
+    """
     def __init__(
         self,
         *,
         spec: _builtins.str = ...,
         element_id: _builtins.str = ...,
         engine: _builtins.str = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["element_id", b"element_id", "engine", b"engine", "spec", b"spec"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "element_id", b"element_id", "engine", b"engine", "spec", b"spec"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___GraphVizChart: _TypeAlias = GraphVizChart  # noqa: Y015

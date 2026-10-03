@@ -26,10 +26,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -51,7 +51,10 @@ class PlotlyChart(_message.Message):
         """Lasso selection mode"""
 
     class SelectionMode(_SelectionMode, metaclass=_SelectionModeEnumTypeWrapper):
-        """Available selection modes:"""
+        """Next ID: 13
+
+        Available selection modes:
+        """
 
     POINTS: PlotlyChart.SelectionMode.ValueType  # 0
     """Point selection mode"""
@@ -66,6 +69,7 @@ class PlotlyChart(_message.Message):
     FORM_ID_FIELD_NUMBER: _builtins.int
     SPEC_FIELD_NUMBER: _builtins.int
     CONFIG_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     theme: _builtins.str
     """override the properties with a theme. Currently, only "streamlit" or None are accepted."""
     id: _builtins.str
@@ -76,6 +80,11 @@ class PlotlyChart(_message.Message):
     """JSON-serialized dict containing keys from the set {data, frames, layout}."""
     config: _builtins.str
     """JSON-serialized dict with Plotly's config object."""
+    alt: _builtins.str
+    """Author-provided description of the chart, exposed to assistive
+    technologies as the accessible name. Unset when omitted or when an empty /
+    whitespace-only value was normalized away in Python.
+    """
     @_builtins.property
     def selection_mode(self) -> _containers.RepeatedScalarFieldContainer[Global___PlotlyChart.SelectionMode.ValueType]:
         """Activate selections types on the chart."""
@@ -89,11 +98,14 @@ class PlotlyChart(_message.Message):
         form_id: _builtins.str = ...,
         spec: _builtins.str = ...,
         config: _builtins.str = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["config", b"config", "form_id", b"form_id", "id", b"id", "selection_mode", b"selection_mode", "spec", b"spec", "theme", b"theme"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "config", b"config", "form_id", b"form_id", "id", b"id", "selection_mode", b"selection_mode", "spec", b"spec", "theme", b"theme"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___PlotlyChart: _TypeAlias = PlotlyChart  # noqa: Y015

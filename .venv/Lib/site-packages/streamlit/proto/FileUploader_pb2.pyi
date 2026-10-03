@@ -49,6 +49,7 @@ class FileUploader(_message.Message):
     DISABLED_FIELD_NUMBER: _builtins.int
     LABEL_VISIBILITY_FIELD_NUMBER: _builtins.int
     ACCEPT_DIRECTORY_FIELD_NUMBER: _builtins.int
+    IGNORE_RERUN_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     """The widget id"""
     label: _builtins.str
@@ -62,6 +63,12 @@ class FileUploader(_message.Message):
     disabled: _builtins.bool
     accept_directory: _builtins.bool
     """If true, the widget accepts directory uploads (includes all files in subdirectories)."""
+    ignore_rerun: _builtins.bool
+    """Set by on_change="ignore": do not schedule a rerun; buffer the value until
+    the next rerun. Inside a form, this flag has no effect because the form
+    batches values until submit.
+    Next: 13
+    """
     @_builtins.property
     def type(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Supported types: For example: ["png","jpg","img"]"""
@@ -81,10 +88,11 @@ class FileUploader(_message.Message):
         disabled: _builtins.bool = ...,
         label_visibility: _LabelVisibility_pb2.LabelVisibility | None = ...,
         accept_directory: _builtins.bool = ...,
+        ignore_rerun: _builtins.bool = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["label_visibility", b"label_visibility"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["accept_directory", b"accept_directory", "disabled", b"disabled", "form_id", b"form_id", "help", b"help", "id", b"id", "label", b"label", "label_visibility", b"label_visibility", "max_upload_size_mb", b"max_upload_size_mb", "multiple_files", b"multiple_files", "type", b"type"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["accept_directory", b"accept_directory", "disabled", b"disabled", "form_id", b"form_id", "help", b"help", "id", b"id", "ignore_rerun", b"ignore_rerun", "label", b"label", "label_visibility", b"label_visibility", "max_upload_size_mb", b"max_upload_size_mb", "multiple_files", b"multiple_files", "type", b"type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

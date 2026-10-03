@@ -102,11 +102,16 @@ class ClientState(_message.Message):
     IS_AUTO_RERUN_FIELD_NUMBER: _builtins.int
     CACHED_MESSAGE_HASHES_FIELD_NUMBER: _builtins.int
     CONTEXT_INFO_FIELD_NUMBER: _builtins.int
+    IS_HISTORY_NAVIGATION_FIELD_NUMBER: _builtins.int
     query_string: _builtins.str
     page_script_hash: _builtins.str
     page_name: _builtins.str
     fragment_id: _builtins.str
     is_auto_rerun: _builtins.bool
+    is_history_navigation: _builtins.bool
+    """True when the rerun was triggered by browser back/forward (popstate).
+    Bound widgets should seed from the URL instead of stale frontend state.
+    """
     @_builtins.property
     def widget_states(self) -> _WidgetStates_pb2.WidgetStates: ...
     @_builtins.property
@@ -128,10 +133,11 @@ class ClientState(_message.Message):
         is_auto_rerun: _builtins.bool = ...,
         cached_message_hashes: _abc.Iterable[_builtins.str] | None = ...,
         context_info: Global___ContextInfo | None = ...,
+        is_history_navigation: _builtins.bool = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["context_info", b"context_info", "widget_states", b"widget_states"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cached_message_hashes", b"cached_message_hashes", "context_info", b"context_info", "fragment_id", b"fragment_id", "is_auto_rerun", b"is_auto_rerun", "page_name", b"page_name", "page_script_hash", b"page_script_hash", "query_string", b"query_string", "widget_states", b"widget_states"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["cached_message_hashes", b"cached_message_hashes", "context_info", b"context_info", "fragment_id", b"fragment_id", "is_auto_rerun", b"is_auto_rerun", "is_history_navigation", b"is_history_navigation", "page_name", b"page_name", "page_script_hash", b"page_script_hash", "query_string", b"query_string", "widget_states", b"widget_states"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

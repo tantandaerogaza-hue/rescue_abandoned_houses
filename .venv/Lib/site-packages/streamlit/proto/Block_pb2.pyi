@@ -257,11 +257,13 @@ class Block(_message.Message):
         ID_FIELD_NUMBER: _builtins.int
         TYPE_FIELD_NUMBER: _builtins.int
         STATE_FIELD_NUMBER: _builtins.int
+        QUERY_PARAM_KEY_FIELD_NUMBER: _builtins.int
+        DEFAULT_EXPANDED_FIELD_NUMBER: _builtins.int
         label: _builtins.str
         expanded: _builtins.bool
         icon: _builtins.str
         id: _builtins.str
-        """ID for dynamic expanders. Only set when on_change="rerun",
+        """ID for dynamic expanders. Only set when on_change="rerun" or bind="query-params",
         signaling the frontend to treat this as a stateful widget.
         """
         type: Global___Block.Expandable.Type.ValueType
@@ -269,6 +271,14 @@ class Block(_message.Message):
         state: Global___Block.Expandable.State.ValueType
         """Progress state, only set by st.status. The frontend uses it to pick the
         step icon and to announce the state to screen readers.
+        """
+        query_param_key: _builtins.str
+        """Query parameter name the expander's open state syncs with. Only set when
+        bind="query-params".
+        """
+        default_expanded: _builtins.bool
+        """Original `expanded=` default. The frontend omits the query param when the
+        expander matches this value. Distinct from `expanded`, which is current state.
         """
         def __init__(
             self,
@@ -279,19 +289,29 @@ class Block(_message.Message):
             id: _builtins.str | None = ...,
             type: Global___Block.Expandable.Type.ValueType = ...,
             state: Global___Block.Expandable.State.ValueType = ...,
+            query_param_key: _builtins.str | None = ...,
+            default_expanded: _builtins.bool | None = ...,
         ) -> None: ...
-        _HasFieldArgType: _TypeAlias = _typing.Literal["_expanded", b"_expanded", "_id", b"_id", "expanded", b"expanded", "id", b"id"]  # noqa: Y015
+        _HasFieldArgType: _TypeAlias = _typing.Literal["_default_expanded", b"_default_expanded", "_expanded", b"_expanded", "_id", b"_id", "_query_param_key", b"_query_param_key", "default_expanded", b"default_expanded", "expanded", b"expanded", "id", b"id", "query_param_key", b"query_param_key"]  # noqa: Y015
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-        _ClearFieldArgType: _TypeAlias = _typing.Literal["_expanded", b"_expanded", "_id", b"_id", "expanded", b"expanded", "icon", b"icon", "id", b"id", "label", b"label", "state", b"state", "type", b"type"]  # noqa: Y015
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["_default_expanded", b"_default_expanded", "_expanded", b"_expanded", "_id", b"_id", "_query_param_key", b"_query_param_key", "default_expanded", b"default_expanded", "expanded", b"expanded", "icon", b"icon", "id", b"id", "label", b"label", "query_param_key", b"query_param_key", "state", b"state", "type", b"type"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        _WhichOneofReturnType__default_expanded: _TypeAlias = _typing.Literal["default_expanded"]  # noqa: Y015
+        _WhichOneofArgType__default_expanded: _TypeAlias = _typing.Literal["_default_expanded", b"_default_expanded"]  # noqa: Y015
         _WhichOneofReturnType__expanded: _TypeAlias = _typing.Literal["expanded"]  # noqa: Y015
         _WhichOneofArgType__expanded: _TypeAlias = _typing.Literal["_expanded", b"_expanded"]  # noqa: Y015
         _WhichOneofReturnType__id: _TypeAlias = _typing.Literal["id"]  # noqa: Y015
         _WhichOneofArgType__id: _TypeAlias = _typing.Literal["_id", b"_id"]  # noqa: Y015
+        _WhichOneofReturnType__query_param_key: _TypeAlias = _typing.Literal["query_param_key"]  # noqa: Y015
+        _WhichOneofArgType__query_param_key: _TypeAlias = _typing.Literal["_query_param_key", b"_query_param_key"]  # noqa: Y015
+        @_typing.overload
+        def WhichOneof(self, oneof_group: _WhichOneofArgType__default_expanded) -> _WhichOneofReturnType__default_expanded | None: ...
         @_typing.overload
         def WhichOneof(self, oneof_group: _WhichOneofArgType__expanded) -> _WhichOneofReturnType__expanded | None: ...
         @_typing.overload
         def WhichOneof(self, oneof_group: _WhichOneofArgType__id) -> _WhichOneofReturnType__id | None: ...
+        @_typing.overload
+        def WhichOneof(self, oneof_group: _WhichOneofArgType__query_param_key) -> _WhichOneofReturnType__query_param_key | None: ...
 
     @_typing.final
     class Dialog(_message.Message):
@@ -312,12 +332,28 @@ class Block(_message.Message):
         LARGE: Block.Dialog.DialogWidth.ValueType  # 1
         MEDIUM: Block.Dialog.DialogWidth.ValueType  # 2
 
+        class _DialogPosition:
+            ValueType = _typing.NewType("ValueType", _builtins.int)
+            V: _TypeAlias = ValueType  # noqa: Y015
+
+        class _DialogPositionEnumTypeWrapper(_enum_type_wrapper._EnumTypeWrapper[Block.Dialog._DialogPosition.ValueType], _builtins.type):
+            DESCRIPTOR: _descriptor.EnumDescriptor
+            CENTER: Block.Dialog._DialogPosition.ValueType  # 0
+            LEFT: Block.Dialog._DialogPosition.ValueType  # 1
+            RIGHT: Block.Dialog._DialogPosition.ValueType  # 2
+
+        class DialogPosition(_DialogPosition, metaclass=_DialogPositionEnumTypeWrapper): ...
+        CENTER: Block.Dialog.DialogPosition.ValueType  # 0
+        LEFT: Block.Dialog.DialogPosition.ValueType  # 1
+        RIGHT: Block.Dialog.DialogPosition.ValueType  # 2
+
         TITLE_FIELD_NUMBER: _builtins.int
         DISMISSIBLE_FIELD_NUMBER: _builtins.int
         WIDTH_FIELD_NUMBER: _builtins.int
         IS_OPEN_FIELD_NUMBER: _builtins.int
         ID_FIELD_NUMBER: _builtins.int
         ICON_FIELD_NUMBER: _builtins.int
+        POSITION_FIELD_NUMBER: _builtins.int
         title: _builtins.str
         dismissible: _builtins.bool
         width: Global___Block.Dialog.DialogWidth.ValueType
@@ -326,6 +362,8 @@ class Block(_message.Message):
         """If id is set, dismissal of the dialog will trigger a rerun."""
         icon: _builtins.str
         """Optional icon shown next to the dialog title."""
+        position: Global___Block.Dialog.DialogPosition.ValueType
+        """Placement of the dialog. LEFT/RIGHT render it as a full-height side drawer."""
         def __init__(
             self,
             *,
@@ -335,10 +373,11 @@ class Block(_message.Message):
             is_open: _builtins.bool | None = ...,
             id: _builtins.str = ...,
             icon: _builtins.str = ...,
+            position: Global___Block.Dialog.DialogPosition.ValueType = ...,
         ) -> None: ...
         _HasFieldArgType: _TypeAlias = _typing.Literal["_is_open", b"_is_open", "is_open", b"is_open"]  # noqa: Y015
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-        _ClearFieldArgType: _TypeAlias = _typing.Literal["_is_open", b"_is_open", "dismissible", b"dismissible", "icon", b"icon", "id", b"id", "is_open", b"is_open", "title", b"title", "width", b"width"]  # noqa: Y015
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["_is_open", b"_is_open", "dismissible", b"dismissible", "icon", b"icon", "id", b"id", "is_open", b"is_open", "position", b"position", "title", b"title", "width", b"width"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
         _WhichOneofReturnType__is_open: _TypeAlias = _typing.Literal["is_open"]  # noqa: Y015
         _WhichOneofArgType__is_open: _TypeAlias = _typing.Literal["_is_open", b"_is_open"]  # noqa: Y015
@@ -376,26 +415,47 @@ class Block(_message.Message):
 
         DEFAULT_TAB_INDEX_FIELD_NUMBER: _builtins.int
         ID_FIELD_NUMBER: _builtins.int
+        QUERY_PARAM_KEY_FIELD_NUMBER: _builtins.int
+        DEFAULT_TAB_LABEL_FIELD_NUMBER: _builtins.int
         default_tab_index: _builtins.int
         id: _builtins.str
-        """Widget ID for dynamic tabs. Only set when on_change="rerun",
-        signaling the frontend to treat this as a stateful widget.
-        When absent, tabs may still have a block-level id for CSS key
-        styling but should not trigger reruns on tab change.
+        """Widget ID for dynamic tabs. Only set when on_change="rerun" or
+        bind="query-params", signaling the frontend to treat this as a
+        stateful widget. When absent, tabs may still have a block-level id
+        for CSS key styling but should not trigger reruns on tab change.
+        """
+        query_param_key: _builtins.str
+        """Query parameter name the active tab syncs with. Only set when
+        bind="query-params".
+        """
+        default_tab_label: _builtins.str
+        """Original default tab label (from `default=` or the first tab). Omitted
+        from the URL when the active tab matches.
         """
         def __init__(
             self,
             *,
             default_tab_index: _builtins.int = ...,
             id: _builtins.str | None = ...,
+            query_param_key: _builtins.str | None = ...,
+            default_tab_label: _builtins.str | None = ...,
         ) -> None: ...
-        _HasFieldArgType: _TypeAlias = _typing.Literal["_id", b"_id", "id", b"id"]  # noqa: Y015
+        _HasFieldArgType: _TypeAlias = _typing.Literal["_default_tab_label", b"_default_tab_label", "_id", b"_id", "_query_param_key", b"_query_param_key", "default_tab_label", b"default_tab_label", "id", b"id", "query_param_key", b"query_param_key"]  # noqa: Y015
         def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-        _ClearFieldArgType: _TypeAlias = _typing.Literal["_id", b"_id", "default_tab_index", b"default_tab_index", "id", b"id"]  # noqa: Y015
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["_default_tab_label", b"_default_tab_label", "_id", b"_id", "_query_param_key", b"_query_param_key", "default_tab_index", b"default_tab_index", "default_tab_label", b"default_tab_label", "id", b"id", "query_param_key", b"query_param_key"]  # noqa: Y015
         def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+        _WhichOneofReturnType__default_tab_label: _TypeAlias = _typing.Literal["default_tab_label"]  # noqa: Y015
+        _WhichOneofArgType__default_tab_label: _TypeAlias = _typing.Literal["_default_tab_label", b"_default_tab_label"]  # noqa: Y015
         _WhichOneofReturnType__id: _TypeAlias = _typing.Literal["id"]  # noqa: Y015
         _WhichOneofArgType__id: _TypeAlias = _typing.Literal["_id", b"_id"]  # noqa: Y015
+        _WhichOneofReturnType__query_param_key: _TypeAlias = _typing.Literal["query_param_key"]  # noqa: Y015
+        _WhichOneofArgType__query_param_key: _TypeAlias = _typing.Literal["_query_param_key", b"_query_param_key"]  # noqa: Y015
+        @_typing.overload
+        def WhichOneof(self, oneof_group: _WhichOneofArgType__default_tab_label) -> _WhichOneofReturnType__default_tab_label | None: ...
+        @_typing.overload
         def WhichOneof(self, oneof_group: _WhichOneofArgType__id) -> _WhichOneofReturnType__id | None: ...
+        @_typing.overload
+        def WhichOneof(self, oneof_group: _WhichOneofArgType__query_param_key) -> _WhichOneofReturnType__query_param_key | None: ...
 
     @_typing.final
     class Tab(_message.Message):

@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1bstreamlit/proto/Image.proto\"1\n\x05Image\x12\x0b\n\x03url\x18\x03 \x01(\t\x12\x0f\n\x07\x63\x61ption\x18\x02 \x01(\tJ\x04\x08\x01\x10\x02J\x04\x08\x04\x10\x05\"5\n\tImageList\x12\x14\n\x04imgs\x18\x01 \x03(\x0b\x32\x06.Image\x12\x0c\n\x04link\x18\x03 \x01(\tJ\x04\x08\x02\x10\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1bstreamlit/proto/Image.proto\"K\n\x05Image\x12\x0b\n\x03url\x18\x03 \x01(\t\x12\x0f\n\x07\x63\x61ption\x18\x02 \x01(\t\x12\x10\n\x03\x61lt\x18\x05 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_altJ\x04\x08\x01\x10\x02J\x04\x08\x04\x10\x05\"5\n\tImageList\x12\x14\n\x04imgs\x18\x01 \x03(\x0b\x32\x06.Image\x12\x0c\n\x04link\x18\x03 \x01(\tJ\x04\x08\x02\x10\x03\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -22,7 +22,7 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'streamlit.proto.Image_pb2',
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_IMAGE']._serialized_start=31
-  _globals['_IMAGE']._serialized_end=80
-  _globals['_IMAGELIST']._serialized_start=82
-  _globals['_IMAGELIST']._serialized_end=135
+  _globals['_IMAGE']._serialized_end=106
+  _globals['_IMAGELIST']._serialized_start=108
+  _globals['_IMAGELIST']._serialized_end=161
 # @@protoc_insertion_point(module_scope)

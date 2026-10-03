@@ -27,10 +27,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -46,6 +46,7 @@ class VegaLiteChart(_message.Message):
     ID_FIELD_NUMBER: _builtins.int
     SELECTION_MODE_FIELD_NUMBER: _builtins.int
     FORM_ID_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     spec: _builtins.str
     """The a JSON-formatted string with the Vega-Lite spec."""
     use_container_width: _builtins.bool
@@ -56,6 +57,11 @@ class VegaLiteChart(_message.Message):
     """ID, required for selection events."""
     form_id: _builtins.str
     """The form ID of the widget, this is required if selections are activated on the chart."""
+    alt: _builtins.str
+    """Accessible name for the chart (author `alt`). Applied on the frontend as
+    Vega-Lite `description` (→ aria-label on role="graphics-document").
+    Never written into the hashed `spec` JSON.
+    """
     @_builtins.property
     def data(self) -> _ArrowData_pb2.ArrowData:
         """The dataframe that will be used as the chart's main data source, if
@@ -83,11 +89,14 @@ class VegaLiteChart(_message.Message):
         id: _builtins.str = ...,
         selection_mode: _abc.Iterable[_builtins.str] | None = ...,
         form_id: _builtins.str = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["data", b"data"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "data", b"data"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["data", b"data", "datasets", b"datasets", "form_id", b"form_id", "id", b"id", "selection_mode", b"selection_mode", "spec", b"spec", "theme", b"theme", "use_container_width", b"use_container_width"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "data", b"data", "datasets", b"datasets", "form_id", b"form_id", "id", b"id", "selection_mode", b"selection_mode", "spec", b"spec", "theme", b"theme", "use_container_width", b"use_container_width"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___VegaLiteChart: _TypeAlias = VegaLiteChart  # noqa: Y015

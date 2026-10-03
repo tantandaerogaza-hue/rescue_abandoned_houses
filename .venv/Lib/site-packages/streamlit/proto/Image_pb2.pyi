@@ -40,19 +40,27 @@ class Image(_message.Message):
 
     URL_FIELD_NUMBER: _builtins.int
     CAPTION_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     url: _builtins.str
     caption: _builtins.str
+    alt: _builtins.str
+    """Author-provided accessible name for the <img>.
+    Unset means no alt attribute. Empty string means decorative (alt="").
+    """
     def __init__(
         self,
         *,
         url: _builtins.str = ...,
         caption: _builtins.str = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["caption", b"caption", "url", b"url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "caption", b"caption", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___Image: _TypeAlias = Image  # noqa: Y015
 

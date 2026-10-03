@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#streamlit/proto/GraphVizChart.proto\"S\n\rGraphVizChart\x12\x0c\n\x04spec\x18\x01 \x01(\t\x12\x12\n\nelement_id\x18\x05 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x06 \x01(\tJ\x04\x08\x02\x10\x03J\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#streamlit/proto/GraphVizChart.proto\"m\n\rGraphVizChart\x12\x0c\n\x04spec\x18\x01 \x01(\t\x12\x12\n\nelement_id\x18\x05 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x06 \x01(\t\x12\x10\n\x03\x61lt\x18\x07 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_altJ\x04\x08\x02\x10\x03J\x04\x08\x03\x10\x04J\x04\x08\x04\x10\x05\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -22,5 +22,5 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'streamlit.proto.GraphVizCha
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_GRAPHVIZCHART']._serialized_start=39
-  _globals['_GRAPHVIZCHART']._serialized_end=122
+  _globals['_GRAPHVIZCHART']._serialized_end=148
 # @@protoc_insertion_point(module_scope)

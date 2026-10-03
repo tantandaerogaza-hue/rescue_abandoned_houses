@@ -38,12 +38,18 @@ class IFrame(_message.Message):
     SRCDOC_FIELD_NUMBER: _builtins.int
     SCROLLING_FIELD_NUMBER: _builtins.int
     TAB_INDEX_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     src: _builtins.str
     """A URL to load"""
     srcdoc: _builtins.str
     """Inline HTML"""
     scrolling: _builtins.bool
     tab_index: _builtins.int
+    alt: _builtins.str
+    """Author-provided accessible name, mapped to the iframe `title`. Unset when
+    omitted or when an empty / whitespace-only value was normalized away.
+    The frontend falls back to "st.iframe" when unset — an iframe must have a title.
+    """
     def __init__(
         self,
         *,
@@ -51,15 +57,20 @@ class IFrame(_message.Message):
         srcdoc: _builtins.str = ...,
         scrolling: _builtins.bool = ...,
         tab_index: _builtins.int | None = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_tab_index", b"_tab_index", "src", b"src", "srcdoc", b"srcdoc", "tab_index", b"tab_index", "type", b"type"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "_tab_index", b"_tab_index", "alt", b"alt", "src", b"src", "srcdoc", b"srcdoc", "tab_index", b"tab_index", "type", b"type"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_tab_index", b"_tab_index", "scrolling", b"scrolling", "src", b"src", "srcdoc", b"srcdoc", "tab_index", b"tab_index", "type", b"type"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "_tab_index", b"_tab_index", "alt", b"alt", "scrolling", b"scrolling", "src", b"src", "srcdoc", b"srcdoc", "tab_index", b"tab_index", "type", b"type"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
     _WhichOneofReturnType__tab_index: _TypeAlias = _typing.Literal["tab_index"]  # noqa: Y015
     _WhichOneofArgType__tab_index: _TypeAlias = _typing.Literal["_tab_index", b"_tab_index"]  # noqa: Y015
     _WhichOneofReturnType_type: _TypeAlias = _typing.Literal["src", "srcdoc"]  # noqa: Y015
     _WhichOneofArgType_type: _TypeAlias = _typing.Literal["type", b"type"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__tab_index) -> _WhichOneofReturnType__tab_index | None: ...
     @_typing.overload

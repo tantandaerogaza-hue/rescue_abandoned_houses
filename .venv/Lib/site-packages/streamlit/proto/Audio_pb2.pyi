@@ -42,6 +42,7 @@ class Audio(_message.Message):
     AUTOPLAY_FIELD_NUMBER: _builtins.int
     ID_FIELD_NUMBER: _builtins.int
     WIDTH_CONFIG_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     url: _builtins.str
     start_time: _builtins.int
     """The currentTime attribute of the HTML <audio> tag's <source> subtag."""
@@ -51,6 +52,12 @@ class Audio(_message.Message):
     """Indicates whether the audio should start over from the beginning once it ends."""
     autoplay: _builtins.bool
     id: _builtins.str
+    alt: _builtins.str
+    """Author-provided description of the audio, exposed to assistive
+    technologies as the accessible name. Unset when omitted or when an empty /
+    whitespace-only value was normalized away in Python. Presence distinguishes
+    "not provided" from a future decorative empty string on other elements.
+    """
     @_builtins.property
     def width_config(self) -> _WidthConfig_pb2.WidthConfig: ...
     def __init__(
@@ -63,13 +70,19 @@ class Audio(_message.Message):
         autoplay: _builtins.bool = ...,
         id: _builtins.str = ...,
         width_config: _WidthConfig_pb2.WidthConfig | None = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_width_config", b"_width_config", "width_config", b"width_config"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "_width_config", b"_width_config", "alt", b"alt", "width_config", b"width_config"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_width_config", b"_width_config", "autoplay", b"autoplay", "end_time", b"end_time", "id", b"id", "loop", b"loop", "start_time", b"start_time", "url", b"url", "width_config", b"width_config"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "_width_config", b"_width_config", "alt", b"alt", "autoplay", b"autoplay", "end_time", b"end_time", "id", b"id", "loop", b"loop", "start_time", b"start_time", "url", b"url", "width_config", b"width_config"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
     _WhichOneofReturnType__width_config: _TypeAlias = _typing.Literal["width_config"]  # noqa: Y015
     _WhichOneofArgType__width_config: _TypeAlias = _typing.Literal["_width_config", b"_width_config"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
+    @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__width_config) -> _WhichOneofReturnType__width_config | None: ...
 
 Global___Audio: _TypeAlias = Audio  # noqa: Y015

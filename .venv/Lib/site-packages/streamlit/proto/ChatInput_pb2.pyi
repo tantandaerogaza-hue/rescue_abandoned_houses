@@ -90,6 +90,7 @@ class ChatInput(_message.Message):
     ACCEPT_AUDIO_FIELD_NUMBER: _builtins.int
     AUDIO_SAMPLE_RATE_FIELD_NUMBER: _builtins.int
     SUBMIT_MODE_FIELD_NUMBER: _builtins.int
+    IS_AUTO_POSITIONED_AT_BOTTOM_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     placeholder: _builtins.str
     max_chars: _builtins.int
@@ -107,6 +108,10 @@ class ChatInput(_message.Message):
     If not set, uses browser default
     """
     submit_mode: Global___ChatInput.SubmitMode.ValueType
+    is_auto_positioned_at_bottom: _builtins.bool
+    """Whether st.chat_input automatically moved this widget from the main app
+    body into the bottom container.
+    """
     @_builtins.property
     def file_type(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Supported file types: For example: ["png","jpg","img"]"""
@@ -127,10 +132,11 @@ class ChatInput(_message.Message):
         accept_audio: _builtins.bool = ...,
         audio_sample_rate: _builtins.int | None = ...,
         submit_mode: Global___ChatInput.SubmitMode.ValueType = ...,
+        is_auto_positioned_at_bottom: _builtins.bool = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_audio_sample_rate", b"_audio_sample_rate", "audio_sample_rate", b"audio_sample_rate"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_audio_sample_rate", b"_audio_sample_rate", "accept_audio", b"accept_audio", "accept_file", b"accept_file", "audio_sample_rate", b"audio_sample_rate", "default", b"default", "disabled", b"disabled", "file_type", b"file_type", "id", b"id", "max_chars", b"max_chars", "max_upload_size_mb", b"max_upload_size_mb", "placeholder", b"placeholder", "set_value", b"set_value", "submit_mode", b"submit_mode", "value", b"value"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_audio_sample_rate", b"_audio_sample_rate", "accept_audio", b"accept_audio", "accept_file", b"accept_file", "audio_sample_rate", b"audio_sample_rate", "default", b"default", "disabled", b"disabled", "file_type", b"file_type", "id", b"id", "is_auto_positioned_at_bottom", b"is_auto_positioned_at_bottom", "max_chars", b"max_chars", "max_upload_size_mb", b"max_upload_size_mb", "placeholder", b"placeholder", "set_value", b"set_value", "submit_mode", b"submit_mode", "value", b"value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__audio_sample_rate: _TypeAlias = _typing.Literal["audio_sample_rate"]  # noqa: Y015
     _WhichOneofArgType__audio_sample_rate: _TypeAlias = _typing.Literal["_audio_sample_rate", b"_audio_sample_rate"]  # noqa: Y015

@@ -25,10 +25,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -65,12 +65,18 @@ class Table(_message.Message):
     BORDER_MODE_FIELD_NUMBER: _builtins.int
     HIDE_INDEX_FIELD_NUMBER: _builtins.int
     HIDE_HEADER_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     border_mode: Global___Table.BorderMode.ValueType
     """How to show borders around the table and between cells."""
     hide_index: _builtins.bool
     """Whether to hide the index column(s)."""
     hide_header: _builtins.bool
     """Whether to hide the column header row(s)."""
+    alt: _builtins.str
+    """Author-provided description of the table, exposed to assistive
+    technologies as the accessible name. Unset when omitted or when an empty /
+    whitespace-only value was normalized away in Python.
+    """
     @_builtins.property
     def arrow_data(self) -> _ArrowData_pb2.ArrowData:
         """The Arrow data to display"""
@@ -82,11 +88,14 @@ class Table(_message.Message):
         border_mode: Global___Table.BorderMode.ValueType = ...,
         hide_index: _builtins.bool = ...,
         hide_header: _builtins.bool = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["arrow_data", b"arrow_data"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "arrow_data", b"arrow_data"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["arrow_data", b"arrow_data", "border_mode", b"border_mode", "hide_header", b"hide_header", "hide_index", b"hide_index"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "arrow_data", b"arrow_data", "border_mode", b"border_mode", "hide_header", b"hide_header", "hide_index", b"hide_index"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___Table: _TypeAlias = Table  # noqa: Y015

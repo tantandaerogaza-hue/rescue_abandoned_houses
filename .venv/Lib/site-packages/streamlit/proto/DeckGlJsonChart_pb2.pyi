@@ -26,10 +26,10 @@ import builtins as _builtins
 import sys
 import typing as _typing
 
-if sys.version_info >= (3, 11):
-    from typing import TypeAlias as _TypeAlias, Never as _Never
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
+    from typing_extensions import TypeAlias as _TypeAlias
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -49,7 +49,10 @@ class DeckGlJsonChart(_message.Message):
         """Multiple objects can be selected at a time."""
 
     class SelectionMode(_SelectionMode, metaclass=_SelectionModeEnumTypeWrapper):
-        """Available selection modes:"""
+        """Next ID: 12
+
+        Available selection modes:
+        """
 
     SINGLE_OBJECT: DeckGlJsonChart.SelectionMode.ValueType  # 0
     """Only one object can be selected at a time."""
@@ -62,6 +65,7 @@ class DeckGlJsonChart(_message.Message):
     MAPBOX_TOKEN_FIELD_NUMBER: _builtins.int
     SELECTION_MODE_FIELD_NUMBER: _builtins.int
     FORM_ID_FIELD_NUMBER: _builtins.int
+    ALT_FIELD_NUMBER: _builtins.int
     json: _builtins.str
     """The json of the pydeck object (https://deckgl.readthedocs.io/en/latest/deck.html)"""
     tooltip: _builtins.str
@@ -71,6 +75,11 @@ class DeckGlJsonChart(_message.Message):
     """The Mapbox token, if any."""
     form_id: _builtins.str
     """The form ID of the widget, this is required if the chart has selection events"""
+    alt: _builtins.str
+    """Author-provided description of the map/chart, exposed to assistive
+    technologies as the accessible name. Unset when omitted or when an empty /
+    whitespace-only value was normalized away in Python.
+    """
     @_builtins.property
     def selection_mode(self) -> _containers.RepeatedScalarFieldContainer[Global___DeckGlJsonChart.SelectionMode.ValueType]:
         """If non-empty, treat this instance as a Widget"""
@@ -84,11 +93,14 @@ class DeckGlJsonChart(_message.Message):
         mapbox_token: _builtins.str = ...,
         selection_mode: _abc.Iterable[Global___DeckGlJsonChart.SelectionMode.ValueType] | None = ...,
         form_id: _builtins.str = ...,
+        alt: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["form_id", b"form_id", "id", b"id", "json", b"json", "mapbox_token", b"mapbox_token", "selection_mode", b"selection_mode", "tooltip", b"tooltip"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_alt", b"_alt", "alt", b"alt", "form_id", b"form_id", "id", b"id", "json", b"json", "mapbox_token", b"mapbox_token", "selection_mode", b"selection_mode", "tooltip", b"tooltip"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType__alt: _TypeAlias = _typing.Literal["alt"]  # noqa: Y015
+    _WhichOneofArgType__alt: _TypeAlias = _typing.Literal["_alt", b"_alt"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__alt) -> _WhichOneofReturnType__alt | None: ...
 
 Global___DeckGlJsonChart: _TypeAlias = DeckGlJsonChart  # noqa: Y015

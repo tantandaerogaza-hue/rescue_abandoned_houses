@@ -50,6 +50,7 @@ class Radio(_message.Message):
     LABEL_VISIBILITY_FIELD_NUMBER: _builtins.int
     CAPTIONS_FIELD_NUMBER: _builtins.int
     QUERY_PARAM_KEY_FIELD_NUMBER: _builtins.int
+    IGNORE_RERUN_FIELD_NUMBER: _builtins.int
     id: _builtins.str
     label: _builtins.str
     default: _builtins.int
@@ -61,6 +62,13 @@ class Radio(_message.Message):
     horizontal: _builtins.bool
     query_param_key: _builtins.str
     """If set, widget value is bound to this query parameter key"""
+    ignore_rerun: _builtins.bool
+    """Set by on_change="ignore": do not schedule a rerun; buffer the value until
+    the next rerun. Bound widgets still update the URL when the value is
+    committed. Inside a form, this flag has no effect because the form batches
+    values until submit.
+    Next: 16
+    """
     @_builtins.property
     def options(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
     @_builtins.property
@@ -83,10 +91,11 @@ class Radio(_message.Message):
         label_visibility: _LabelVisibility_pb2.LabelVisibility | None = ...,
         captions: _abc.Iterable[_builtins.str] | None = ...,
         query_param_key: _builtins.str | None = ...,
+        ignore_rerun: _builtins.bool = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["_default", b"_default", "_query_param_key", b"_query_param_key", "_raw_value", b"_raw_value", "default", b"default", "label_visibility", b"label_visibility", "query_param_key", b"query_param_key", "raw_value", b"raw_value"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_default", b"_default", "_query_param_key", b"_query_param_key", "_raw_value", b"_raw_value", "captions", b"captions", "default", b"default", "disabled", b"disabled", "form_id", b"form_id", "help", b"help", "horizontal", b"horizontal", "id", b"id", "label", b"label", "label_visibility", b"label_visibility", "options", b"options", "query_param_key", b"query_param_key", "raw_value", b"raw_value", "set_value", b"set_value"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_default", b"_default", "_query_param_key", b"_query_param_key", "_raw_value", b"_raw_value", "captions", b"captions", "default", b"default", "disabled", b"disabled", "form_id", b"form_id", "help", b"help", "horizontal", b"horizontal", "id", b"id", "ignore_rerun", b"ignore_rerun", "label", b"label", "label_visibility", b"label_visibility", "options", b"options", "query_param_key", b"query_param_key", "raw_value", b"raw_value", "set_value", b"set_value"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__default: _TypeAlias = _typing.Literal["default"]  # noqa: Y015
     _WhichOneofArgType__default: _TypeAlias = _typing.Literal["_default", b"_default"]  # noqa: Y015
