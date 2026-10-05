@@ -1,34 +1,83 @@
 import hashlib
 import json
+import zipfile
 import numpy as np
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
+from pathlib import Path
+from upload_tools import KEYWORDS, first_match, zip_tables, deduplicate_facilities, merge_police, split_amenities
+from visuals import icon_layers, legend_html
 from report_io import read_file, normalize, validate_coordinates, aggregate_stat
 from report_model import LABELS, DISTANCE, TYPES, FACTOR_NAMES, spatial_raw, evaluate, evidence
 
-st.set_page_config(page_title='빈집 유형별 입지적합도',layout='wide')
-st.title('부산 빈집 유형별 입지적합도')
+st.set_page_config(page_title='구해줘 빈집 | 입지적합도',layout='wide')
+st.markdown('''<style>
+.stApp {background:#042A5D;color:#FAFAFA}
+[data-testid="stSidebar"] {background:#103B6E}
+[data-testid="stHeader"] {background:#042A5D}
+h1,h2,h3 {color:#FAFAFA !important}
+[data-testid="stSidebar"] h2 {color:#01A8AF !important}
+.stButton button {border-color:#01A8AF}
+.stButton button:hover {border-color:#FA6C41;color:#FA6C41}
+</style>''',unsafe_allow_html=True)
+st.sidebar.image(str(Path(__file__).parent/'assets'/'logo.png'),use_container_width=True)
+st.title('구해줘 빈집')
+st.subheader('부산 빈집 유형별 입지적합도')
 st.caption('집계 반경 750m · 관광지 유형 7개 · 유형별 독립 평가와 공동순위')
 sources={}
+pool={}
+with st.sidebar:
+    st.header('데이터 업로드 방식')
+    upload_mode=st.radio('업로드 방식',['ZIP으로 한번에','각각 업로드'])
+    if upload_mode=='ZIP으로 한번에':
+        bundle=st.file_uploader('데이터 ZIP',type=['zip'],key='bundle')
+        if bundle:
+            try: pool=zip_tables(bundle.getvalue())
+            except (ValueError, OSError, zipfile.BadZipFile) as error: st.error(str(error))
+        extras=st.file_uploader('공통 목록에 데이터 추가',type=['csv','xlsx'],accept_multiple_files=True,key='extras')
+        for index,extra in enumerate(extras): pool[f'추가/{index+1}_{extra.name}']=extra.getvalue()
+        st.caption(f'선택 가능한 CSV·XLSX {len(pool)}개. 자동 선택 결과는 각 입력칸에서 변경할 수 있다.')
 @st.cache_data(show_spinner=False)
 def read_cached(data,name): return read_file(data,name)
 def load(label,key):
-    file=st.file_uploader(label,type=['csv','xlsx'],key=key)
-    if file is None: return None
-    sources[key]={'file':file.name,'sha256':hashlib.sha256(file.getvalue()).hexdigest()}
-    return read_cached(file.getvalue(),file.name)
+    data=None; name=None
+    if upload_mode=='ZIP으로 한번에':
+        options=['선택 필요']+list(pool)
+        default=first_match(list(pool),KEYWORDS.get(key,[key])) or '선택 필요'
+        pool_key=hashlib.sha256(('\n'.join(pool)).encode()).hexdigest()[:10]
+        choice=st.selectbox(label+' 데이터 파일',options,index=options.index(default),key=f'file_choice_{key}_{pool_key}')
+        replacement=st.file_uploader(label+' 파일 추가·교체 (선택)',type=['csv','xlsx'],key='override_'+key)
+        if replacement is not None: data=replacement.getvalue(); name=replacement.name
+        elif choice!='선택 필요': data=pool[choice]; name=choice
+    else:
+        file=st.file_uploader(label,type=['csv','xlsx'],key=key)
+        if file is not None: data=file.getvalue(); name=file.name
+    if data is None: return None
+    sources[key]={'file':name,'sha256':hashlib.sha256(data).hexdigest()}
+    try:
+        frame=read_cached(data,name)
+        frame.attrs['upload_hash']=sources[key]['sha256']
+        return frame
+    except Exception as error:
+        st.error(f'{label} 파일 읽기 실패: {error}')
+        return None
 def column(source,label,key,aliases,optional=False):
     choices=['선택 필요']+list(source.columns)
-    default=next((a for a in aliases if a in source),'선택 필요')
-    value=st.selectbox(label,choices,index=choices.index(default),key=key)
+    keywords = (['위도','latitude','lat'] if label=='위도' else
+                ['경도','longitude','lng','lon'] if label=='경도' else
+                ['이름','명','name','nm','nam'] if label.startswith('시설명') else None)
+    default=(first_match(list(source.columns),keywords) if keywords else next((a for a in aliases if a in source),None)) or '선택 필요'
+    source_id=source.attrs.get('upload_hash','')[:12]
+    value=st.selectbox(label,choices,index=choices.index(default),key=key+'_'+source_id)
     if value=='선택 필요':
         if optional: return None
         st.info(label+' 열을 선택한다.'); st.stop()
     sources.setdefault('columns',{})[key]=value
     return value
 def facility_upload(kind):
-    source=load(LABELS[kind],kind)
+    ui_label={'police_station':'경찰서','police_local':'지구대,파출소','amenities':'편의시설'}.get(kind,LABELS.get(kind,kind))
+    source=load(ui_label,kind)
     if source is None: return None
     lat=column(source,'위도',kind+'lat',['latitude','위도','역위도'])
     lon=column(source,'경도',kind+'lon',['longitude','경도','역경도'])
@@ -36,17 +85,15 @@ def facility_upload(kind):
     identifier=column(source,'시설 ID (선택)',kind+'id',['facility_id','id','ID'],True)
     if lat==lon: raise ValueError('위도와 경도는 서로 다른 열을 선택한다.')
     frame=pd.DataFrame({'latitude':source[lat],'longitude':source[lon]})
-    frame['name']=source[name].fillna('시설명 없음') if name else [f'{LABELS[kind]} {i+1}' for i in range(len(frame))]
-    if kind=='attraction':
-        type_col=column(source,'관광지 유형 (필수)',kind+'type',['type','유형','관광지유형','분류'])
+    frame['name']=source[name].fillna('시설명 없음') if name else [f'{ui_label} {i+1}' for i in range(len(frame))]
+    if kind in ['attraction','amenities']:
+        type_col=column(source,'관광지 유형 (필수)' if kind=='attraction' else '시설 종류 (필수)',kind+'type',['type','유형','시설종류','시설유형','업종','관광지유형','분류'])
         frame['type']=normalize(source[type_col])
     if identifier:
         frame['facility_id']=normalize(source[identifier])
         if frame.facility_id.isna().any(): raise ValueError('시설 ID에 빈칸이 있다.')
-        if frame.drop_duplicates().facility_id.duplicated().any(): raise ValueError('같은 시설 ID의 좌표·명칭·유형이 다르다.')
-    subset=None if identifier else [c for c in ['latitude','longitude','type'] if c in frame]
     before=len(frame)
-    frame=validate_coordinates(frame.drop_duplicates(subset=subset).reset_index(drop=True))
+    frame=deduplicate_facilities(validate_coordinates(frame))
     if frame.empty and kind in DISTANCE: raise ValueError('최근접 거리 시설은 최소 1개가 필요하다.')
     st.caption(f'{len(frame)}개 연결 / 중복 {before-len(frame)}개 제거')
     return frame
@@ -89,11 +136,42 @@ with st.sidebar:
     st.header('2. 시설 원자료')
     st.markdown('**A 관광체류형:** 관광자원·방문/소비·접근성·안전환경·편의시설\n\n**B 근로자형:** 산업단지·보육/교육·접근성·안전환경·편의시설\n\n**C 대학생형:** 대학교·학습/체육·접근성·안전환경·편의시설')
     facilities={}
-    for kind in LABELS:
+    police_mode=st.radio('경찰시설 입력',['통합 파일','경찰서 / 지구대·파출소 별도'])
+    amenity_mode=st.radio('편의시설 입력',['편의점 / 마트 / 약국 별도','편의시설 통합 파일'])
+    kinds=[k for k in LABELS if not (k=='police' and police_mode!='통합 파일')
+           and not (k in ['store','mart','pharmacy'] and amenity_mode=='편의시설 통합 파일')]
+    for kind in kinds:
         with st.expander(LABELS[kind]):
             try:
                 frame=facility_upload(kind)
                 if frame is not None: facilities[kind]=frame
+            except (ValueError,KeyError) as error: st.error(str(error))
+    if police_mode!='통합 파일':
+        police_parts=[]
+        for kind in ['police_station','police_local']:
+            with st.expander('경찰서' if kind=='police_station' else '지구대,파출소'):
+                try: police_parts.append(facility_upload(kind))
+                except (ValueError,KeyError) as error: st.error(str(error)); police_parts.append(None)
+        if all(frame is not None for frame in police_parts):
+            combined=merge_police(*police_parts)
+            if len(combined): facilities['police']=combined
+            else: st.error('경찰시설은 합쳐서 최소 1개가 필요하다.')
+    if amenity_mode=='편의시설 통합 파일':
+        with st.expander('편의시설 통합',expanded=True):
+            try:
+                combined=facility_upload('amenities')
+                if combined is not None:
+                    mapping={}; complete=True
+                    choices=['선택 필요','편의점','마트','약국']
+                    for index,value in enumerate(combined['type'].dropna().unique()):
+                        guess=next((label for label in choices[1:] if label in str(value)),'선택 필요')
+                        selected=st.selectbox(f'{value} → 시설 종류',choices,index=choices.index(guess),key=f'amenity_map_{index}_{value}')
+                        if selected=='선택 필요': complete=False
+                        else: mapping[value]={'편의점':'store','마트':'mart','약국':'pharmacy'}[selected]
+                    coverage=st.checkbox('통합 자료가 편의점·마트·약국 세 종류를 모두 조사한 자료임을 확인했다')
+                    if complete and coverage:
+                        facilities.update(split_amenities(combined,mapping))
+                        sources['amenity_type_mapping']=mapping
             except (ValueError,KeyError) as error: st.error(str(error))
     st.header('3. 행정동 통계')
     try:
@@ -139,7 +217,7 @@ with st.expander('정규화 기준·제외 자료'):
 if disabled:
     st.warning('내부 변수가 모두 상수인 요인: '+', '.join(disabled)+'. 양의 가중치가 있는 해당 유형은 미산정한다. 공통 순위는 세 유형이 산출 가능할 때만 표시한다.')
 category=st.radio('독립 평가 유형',['A','B','C'],horizontal=True)
-settings={'model':'report_v3','radius_km':.75,'tourism_K':7,'month':sales_month,'weights':weights,
+settings={'model':'report_v3','interface':'v4','upload_mode':upload_mode,'police_mode':police_mode,'amenity_mode':amenity_mode,'radius_km':.75,'tourism_K':7,'month':sales_month,'weights':weights,
  'logs':logs,'sources':sources,'common_N':len(result),'rank':'competition','percentile':'midrank',
  'constant_policy':'exclude within factor; block if factor empty'}
 signature=hashlib.sha256(json.dumps([settings,category],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
@@ -157,7 +235,7 @@ def chart(layers,lat,lon,zoom):
     return pdk.Deck(layers=layers,initial_view_state=pdk.ViewState(latitude=float(lat),longitude=float(lon),zoom=zoom),
                     map_provider='carto',map_style='light',tooltip={'text':'{tooltip}'})
 top=result.loc[result[f'{category}_rank']<=5].copy()
-top['badge']=category+top[f'{category}_rank'].astype(int).astype(str)
+top['badge']=category+':'+top[f'{category}_rank'].astype(int).astype(str)+'위'
 top['tooltip']=top.apply(lambda r:f'{r.house_id} · {r.badge}\n{r[f"{category}_score"]:.2f}점',axis=1) if len(top) else ''
 if st.session_state.get('selected') is None:
     st.caption('각 유형 5위 이내 표시. 공동순위가 있으면 5개보다 많을 수 있다.')
@@ -165,7 +243,7 @@ if st.session_state.get('selected') is None:
     if st.checkbox('나머지 빈집도 표시') or top.empty:
         background=houses.copy(); background['tooltip']=background.house_id
         layers.append(points('background',background,3,[150,150,150,100]))
-    if len(top): layers += [points('top',top,19,colors[category]),texts(top)]
+    if len(top): layers += [points('top',top,30,colors[category]),texts(top)]
     event=st.pydeck_chart(chart(layers,houses.latitude.median(),houses.longitude.median(),12),
         on_select='rerun',selection_mode='single-object',key=f'map_{st.session_state.epoch}',height=600)
     for layer in ['top','labels']:
@@ -178,17 +256,18 @@ else:
     if st.button('← 순위 지도로 돌아가기'):
         st.session_state.selected=None; st.session_state.epoch+=1; st.rerun()
     row=result.loc[result.house_id==st.session_state.selected].iloc[0]
-    st.subheader(f'{row.house_id} · {category}{int(row[f"{category}_rank"])}')
+    st.subheader(f'{row.house_id} · {category}:{int(row[f"{category}_rank"])}위')
     facility=evidence(row,category,facilities,{k:.75 for k in LABELS})
     layers=[]
     if len(facility):
         facility['tooltip']=facility.apply(lambda r:f'{r.facility_type}: {r["name"]}\n{r.distance_km:.3f}km',axis=1)
-        layers.append(points('evidence',facility,6,[123,77,180]))
+        layers.extend(icon_layers(facility))
     selected=pd.DataFrame([{'latitude':row.latitude,'longitude':row.longitude,
-        'badge':category+str(int(row[f'{category}_rank'])),'tooltip':str(row.house_id)}])
-    layers += [points('selected',selected,21,colors[category]),texts(selected)]
+        'badge':category+':'+str(int(row[f'{category}_rank']))+'위','tooltip':str(row.house_id)}])
+    layers += [points('selected',selected,32,colors[category]),texts(selected)]
     extent=max(.75,float(facility.distance_km.max()) if len(facility) else .75)
     st.pydeck_chart(chart(layers,row.latitude,row.longitude,float(np.clip(np.log2(16000/extent),2,15))),height=600)
+    st.markdown(legend_html(),unsafe_allow_html=True)
     st.caption('평가에 사용한 750m 내 집계시설 또는 최근접 시설을 표시한다.')
     factors=TYPES[category]
     st.dataframe(pd.DataFrame({'요인':[FACTOR_NAMES[f] for f in factors],'점수':[row[f] for f in factors],

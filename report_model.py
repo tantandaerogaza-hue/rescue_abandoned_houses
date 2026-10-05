@@ -6,7 +6,7 @@ from model import distances
 LABELS = {'attraction':'관광지', 'parking':'공영주차장', 'subway':'지하철역 출입구',
  'bus':'버스정류장', 'cctv':'방범 CCTV 설치지점', 'police':'경찰시설', 'fire':'소방시설',
  'store':'편의점', 'mart':'마트', 'pharmacy':'약국', 'industry':'산업단지 출입구',
- 'daycare':'어린이집', 'school':'초등학교', 'university':'대학교 출입구',
+ 'daycare':'어린이집,유치원', 'school':'초등학교', 'university':'대학교 출입구',
  'library':'도서관', 'sports':'운동시설'}
 DISTANCE = ['parking','subway','police','fire','industry','daycare','school','university','library','sports']
 FACTORS = {'R':['attraction_count','diversity'], 'Q':['visitors','sales'],
