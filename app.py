@@ -8,8 +8,9 @@ import streamlit as st
 from pathlib import Path
 from upload_tools import KEYWORDS, first_match, zip_tables, deduplicate_facilities, merge_police, split_amenities
 from visuals import icon_layers, legend_html
-from report_io import read_file, normalize, validate_coordinates, aggregate_stat
-from report_model import LABELS, DISTANCE, TYPES, FACTOR_NAMES, spatial_raw, evaluate, evidence
+from report_io import read_file, normalize, validate_coordinates
+from report_model import LABELS, DISTANCE, TYPES, FACTOR_NAMES, spatial_raw, evaluate, evidence, DEFAULT_WEIGHTS, P90, RADII, MODEL_VERSION, nonnegative
+from hyb_io import density_series, dorm_inventory, calculate_dorm_unmet
 
 st.set_page_config(page_title='구해줘 빈집 | 입지적합도',layout='wide')
 st.markdown('''<style>
@@ -24,7 +25,7 @@ h1,h2,h3 {color:#FAFAFA !important}
 st.sidebar.image(str(Path(__file__).parent/'assets'/'logo.png'),use_container_width=True)
 st.title('구해줘 빈집')
 st.subheader('부산 빈집 유형별 입지적합도')
-st.caption('집계 반경 750m · 관광지 유형 7개 · 유형별 독립 평가와 공동순위')
+st.caption('HYB 관광 · 부산 격자 p90 기준 · 시설 750m / 관광 1.5km / 기숙사 3km')
 sources={}
 pool={}
 with st.sidebar:
@@ -86,35 +87,43 @@ def facility_upload(kind):
     if lat==lon: raise ValueError('위도와 경도는 서로 다른 열을 선택한다.')
     frame=pd.DataFrame({'latitude':source[lat],'longitude':source[lon]})
     frame['name']=source[name].fillna('시설명 없음') if name else [f'{ui_label} {i+1}' for i in range(len(frame))]
-    if kind in ['attraction','amenities']:
+    if kind == 'amenities':
         type_col=column(source,'관광지 유형 (필수)' if kind=='attraction' else '시설 종류 (필수)',kind+'type',['type','유형','시설종류','시설유형','업종','관광지유형','분류'])
         frame['type']=normalize(source[type_col])
+    if kind=='attraction':
+        pop_col=column(source,'관광지 등장횟수 appear_cnt (필수)',kind+'pop',['appear_cnt','등장횟수','출현횟수'])
+        frame['appear_cnt']=nonnegative(source[pop_col])
+    if kind=='dorm' or (kind=='university' and dorm_mode=='대학교 파일에 포함'):
+        app_col=column(source,'기숙사 지원자 수 (필수)',kind+'app',['dorm_app','지원자 수','지원자수','기숙사지원자수'])
+        cap_col=column(source,'수용가능인원 (필수)',kind+'cap',['dorm_cap','수용가능인원','수용가능 인원','기숙사수용인원'])
+        if app_col==cap_col: raise ValueError('지원자 수와 수용가능인원은 서로 다른 열을 선택한다.')
+        frame['dorm_app']=nonnegative(source[app_col],allow_missing=True)
+        frame['dorm_cap']=nonnegative(source[cap_col],allow_missing=True)
+        frame['unmet']=calculate_dorm_unmet(frame['dorm_app'],frame['dorm_cap'])
+        st.caption('미충족 인원 = max(지원자 수 − 수용가능인원, 0). 기존 unmet 열은 읽지 않는다.')
     if identifier:
         frame['facility_id']=normalize(source[identifier])
         if frame.facility_id.isna().any(): raise ValueError('시설 ID에 빈칸이 있다.')
     before=len(frame)
-    frame=deduplicate_facilities(validate_coordinates(frame))
-    if frame.empty and kind in DISTANCE: raise ValueError('최근접 거리 시설은 최소 1개가 필요하다.')
+    frame=validate_coordinates(frame)
+    if 'unmet' in frame: frame=dorm_inventory(frame)
+    else: frame=deduplicate_facilities(frame)
+    if frame.empty and not st.checkbox('조사 범위 내 실제 시설 0개인 완비된 자료임을 확인했다',key='empty_'+kind):
+        st.info('빈 파일은 누락 자료인지 실제 0개인지 확인한다.'); return None
+    if kind=='dorm': frame=dorm_inventory(frame)
+    if 'unmet' in frame and frame.unmet.isna().any(): st.warning(f'기숙사 미연결 대학 {frame.unmet.isna().sum()}개: 해당 대학 3km 내 빈집의 D는 미산정한다.')
     st.caption(f'{len(frame)}개 연결 / 중복 {before-len(frame)}개 제거')
     return frame
-def stat_upload(kind,code):
-    label='방문인원' if kind=='visitors' else '일평균매출액'
-    source=load(label,kind)
+def stat_upload(code):
+    source=load('관광업종 매출밀도','sales')
     if source is None: return None,None
-    admin=column(source,'행정동 열',kind+'admin',['admin_code','행정동코드'] if code else ['admin_name','행정동명','행정동'])
-    month=column(source,'기준년월 (YYYYMM)',kind+'month',['month','기준년월'])
-    value=column(source,label,kind+'value',['visitors','방문인원','방문자수'] if kind=='visitors' else ['sales','평균이용금액','일평균매출액'])
-    industry=None; industries=None
-    if kind=='sales':
-        industry=column(source,'업종 (업종별 자료인 경우)',kind+'industry',['industry','업종대분류'],True)
-        if industry:
-            months=normalize(source[month],True)
-            options=sorted(normalize(source.loc[months==months.max(),industry]).dropna().unique().tolist())
-            industries=st.multiselect('집계 업종',options,default=options)
-            if not industries: st.info('업종을 하나 이상 선택한다.'); st.stop()
-    series,latest,unnamed=aggregate_stat(source,month,admin,value,code,industry,industries)
-    sources[kind+'_settings']={'month':latest,'industries':industries,'unnamed_rows_excluded':unnamed}
-    st.caption(f'최근 월 {latest} / {len(series)}개 행정동 / 연결키 없는 행 {unnamed}개 제외')
+    admin=column(source,'행정동 열','sales_admin',['admin_code','행정동코드'] if code else ['행정동명','admin_name','행정동'])
+    value=column(source,'관광업종 매출밀도 sales_den (필수)','sales_den',['sales_den','관광업종매출밀도','매출밀도'])
+    month=column(source,'기준년월 (있으면 선택)','sales_month',['month','기준년월'],True)
+    st.caption('매출액 자체가 아닌, PDF p90과 같은 산정 방식·단위의 매출밀도를 연결한다. 업종별 원자료는 먼저 집계한다.')
+    series,latest,unnamed=density_series(source,admin,value,code,month)
+    sources['sales_settings']={'month':latest,'unnamed_rows_excluded':unnamed,'value_column':value}
+    st.caption(f'기준월 {latest or "파일에 없음"} / {len(series)}개 행정동 / 연결키 없는 행 {unnamed}개 제외')
     return series,latest
 
 with st.sidebar:
@@ -125,7 +134,7 @@ with st.sidebar:
     lat=column(source,'위도','h_lat',['latitude','위도'])
     lon=column(source,'경도','h_lon',['longitude','경도'])
     code=st.radio('행정동 연결 방식',['행정동코드','행정동명'])=='행정동코드'
-    admin=column(source,'행정동 (필수)','h_admin',['행정동코드','admin_code'] if code else ['행정동','행정동명','admin_name'])
+    admin=column(source,'행정동 (필수)','h_admin',['행정동코드','admin_code'] if code else ['행정동명','admin_name','행정동'])
     address=column(source,'주소 (선택)','h_address',['address','주소'],True)
     if len({identifier,lat,lon,admin})!=4: st.error('필수 네 항목은 서로 다른 열을 선택한다.'); st.stop()
     houses=pd.DataFrame({'house_id':source[identifier],'latitude':source[lat],'longitude':source[lon],'admin_key':normalize(source[admin],code)})
@@ -134,17 +143,21 @@ with st.sidebar:
     except ValueError as error: st.error(str(error)); st.stop()
     st.caption('행정동명은 구·군을 포함해 통계 자료와 동일하게 입력한다. 주소에서 추정하지 않는다.')
     st.header('2. 시설 원자료')
-    st.markdown('**A 관광체류형:** 관광자원·방문/소비·접근성·안전환경·편의시설\n\n**B 근로자형:** 산업단지·보육/교육·접근성·안전환경·편의시설\n\n**C 대학생형:** 대학교·학습/체육·접근성·안전환경·편의시설')
+    st.markdown('**A 관광체류형:** HYB 관광·관광업종 매출밀도·교통·안전·생활편의\n\n**B 근로자 정주임대형:** 산업접근·교육/보육·교통·안전·생활편의\n\n**C 대학생 정주임대형:** 대학접근·기숙사 부족·교통·안전·생활편의')
     facilities={}
+    dorm_mode=st.radio('기숙사 자료 입력',['대학교 파일에 포함','별도 좌표 파일'])
+    st.caption('대학/캠퍼스별 지원자 수·수용가능인원을 연결한다. 두 값 중 하나라도 누락되면 미산정한다.')
     police_mode=st.radio('경찰시설 입력',['통합 파일','경찰서 / 지구대·파출소 별도'])
     amenity_mode=st.radio('편의시설 입력',['편의점 / 마트 / 약국 별도','편의시설 통합 파일'])
-    kinds=[k for k in LABELS if not (k=='police' and police_mode!='통합 파일')
+    kinds=[k for k in LABELS if not (k=='dorm' and dorm_mode=='대학교 파일에 포함') and not (k=='police' and police_mode!='통합 파일')
            and not (k in ['store','mart','pharmacy'] and amenity_mode=='편의시설 통합 파일')]
     for kind in kinds:
         with st.expander(LABELS[kind]):
             try:
                 frame=facility_upload(kind)
-                if frame is not None: facilities[kind]=frame
+                if frame is not None:
+                    facilities[kind]=frame
+                    if kind=='university' and dorm_mode=='대학교 파일에 포함': facilities['dorm']=dorm_inventory(frame)
             except (ValueError,KeyError) as error: st.error(str(error))
     if police_mode!='통합 파일':
         police_parts=[]
@@ -173,53 +186,70 @@ with st.sidebar:
                         facilities.update(split_amenities(combined,mapping))
                         sources['amenity_type_mapping']=mapping
             except (ValueError,KeyError) as error: st.error(str(error))
-    st.header('3. 행정동 통계')
+    st.header('3. 관광업종 매출밀도')
     try:
-        with st.expander('방문인원',expanded=True): visitors,visitor_month=stat_upload('visitors',code)
-        with st.expander('매출액',expanded=True): sales,sales_month=stat_upload('sales',code)
+        with st.expander('행정동별 매출밀도',expanded=True): sales,sales_month=stat_upload(code)
     except (ValueError,KeyError) as error: st.error(str(error)); st.stop()
-    confirmed=st.checkbox('두 통계의 기준기간·집계범위를 확인했다')
-    st.header('4. 가중치와 변환')
-    st.caption('집계 반경 750m 고정 / 관광지 유형 K=7 / 편의시설 3종')
-    logs=st.multiselect('로그 변환 ln(1+x) (기본 미적용)',['attraction_count','bus_count','cctv_count','visitors','sales'])
-    if st.button('동일가중치 초기화'):
+    confirmed=st.checkbox('매출밀도 단위와 기준기간·기숙사 자료의 조사범위를 확인했다')
+    st.header('4. 기본 가중치와 조정')
+    st.caption('PDF p90 고정 기준을 적용한다. 로그변환과 표본 Min–Max 정규화는 사용하지 않는다.')
+    with st.expander('점수화 기준'):
+        st.dataframe(pd.DataFrame({'원지표':list(P90),'p90 기준값':list(P90.values())}),hide_index=True)
+        st.caption('거리: ≤750m 1 / ≤1.5km 0.75 / ≤2.25km 0.5 / ≤3km 0.25 / >3km 0. 시설 유무는 750m 기준.')
+    for c in TYPES:
+        for f,v in zip(TYPES[c],DEFAULT_WEIGHTS[c]):
+            key=f'hyb_w_{c}_{f}'
+            if key not in st.session_state: st.session_state[key]=int(round(v*100))
+    if st.button('확정 가중치로 초기화'):
         for c in TYPES:
-            for f in TYPES[c]: st.session_state[f'w_{c}_{f}']=20
+            for f,v in zip(TYPES[c],DEFAULT_WEIGHTS[c]): st.session_state[f'hyb_w_{c}_{f}']=int(round(v*100))
     weights={}
     for c,factors in TYPES.items():
-        with st.expander(c+' 가중치'):
-            values=[st.slider(FACTOR_NAMES[f],0,100,20,key=f'w_{c}_{f}') for f in factors]
+        with st.expander(c+' 가중치',expanded=True):
+            values=[st.slider(FACTOR_NAMES[f],0,100,key=f'hyb_w_{c}_{f}') for f,v in zip(factors,DEFAULT_WEIGHTS[c])]
             if sum(values)==0: st.error('가중치 합계는 0보다 커야 한다.'); st.stop()
             weights[c]=[v/sum(values) for v in values]
-            st.caption(' / '.join(f'{v:.3f}' for v in weights[c]))
+            st.caption('현재 적용: '+' / '.join(f'{f} {w:.3f}' for f,w in zip(factors,weights[c])))
+            st.caption('기본값: '+' / '.join(f'{f} {w:.1f}' for f,w in zip(factors,DEFAULT_WEIGHTS[c])))
 
 missing=[LABELS[k] for k in LABELS if k not in facilities]
-if visitors is None: missing.append('방문인원')
-if sales is None: missing.append('매출액')
+if sales is None: missing.append('관광업종 매출밀도 sales_den')
 if missing: st.info('공통 분석에 필요한 자료: '+', '.join(missing)); st.stop()
-if visitor_month!=sales_month:
-    st.error(f'최근 월 불일치: 방문 {visitor_month}, 매출 {sales_month}. 동일 월 자료가 필요하며 과거 월로 자동 대체하지 않는다.'); st.stop()
-if not confirmed: st.info('두 통계의 집계범위를 확인한 뒤 왼쪽 확인란을 선택한다.'); st.stop()
-@st.cache_data(show_spinner='750m 공간지표 계산 중',max_entries=4)
+if not confirmed: st.info('자료의 단위·조사범위를 확인한 뒤 왼쪽 확인란을 선택한다.'); st.stop()
+connection=pd.DataFrame({'빈집 ID':houses.house_id,'행정동':houses.admin_key,'매출밀도':houses.admin_key.map(sales)})
+with st.expander('행정동 매출밀도 연결 확인',expanded=bool(connection['매출밀도'].isna().any())):
+    st.write(f"매출밀도 연결 {connection['매출밀도'].notna().sum():,}/{len(houses):,}개")
+    st.dataframe(connection,hide_index=True)
+    st.write('통계 행정동 예시:',', '.join(str(v) for v in sales.index[:10]))
+    if connection['매출밀도'].isna().any(): st.download_button('행정동 연결 진단 CSV',connection.to_csv(index=False).encode('utf-8-sig'),'admin_connections.csv')
+
+@st.cache_data(show_spinner='HYB 공간지표 계산 중',max_entries=4)
 def raw_calculation(houses,facilities): return spatial_raw(houses,facilities)
 try:
     raw=raw_calculation(houses,facilities)
-    raw['visitors']=raw.admin_key.map(visitors); raw['sales']=raw.admin_key.map(sales)
-    result,excluded,audit,disabled=evaluate(raw,weights,logs)
+    raw['sales_den']=raw.admin_key.map(sales)
+    from diagnostics import cohort_diagnostics
+    valid,diagnostic_counts,diagnostic_rows=cohort_diagnostics(raw)
+    if not valid.any():
+        st.error('공통 분석 대상이 0개다. 매출밀도 연결과 3km 내 대학의 기숙사 미연결값을 확인한다.')
+        st.dataframe(diagnostic_counts,hide_index=True); st.dataframe(diagnostic_rows,hide_index=True)
+        st.download_button('빈집별 제외 이유 CSV',diagnostic_rows.to_csv(index=False).encode('utf-8-sig'),'exclusion_reasons.csv'); st.stop()
+    result,excluded,audit,disabled=evaluate(raw,weights)
 except ValueError as error: st.error(str(error)); st.stop()
-st.write(f'공통 분석 {len(result):,}개 / 전체 {len(houses):,}개 / 기준월 {sales_month}')
-with st.expander('정규화 기준·제외 자료'):
+st.write(f"공통 분석 {len(result):,}개 / 전체 {len(houses):,}개 / 기준월 {sales_month or '파일에 없음'}")
+with st.expander('점수화 기준·제외 자료'):
     st.dataframe(audit,hide_index=True)
-    st.caption('상수인 정규화 변수는 요인 내부에서 제외·재가중한다. 고정 범위인 편의시설·다양성은 유지한다.')
+    st.caption('모든 원지표는 고정 기준으로 0~1점화한다. 상수여도 제외·재가중하지 않는다. 최종 점수는 100배로 표시한다.')
     if len(excluded):
-        st.dataframe(excluded,hide_index=True)
+        st.dataframe(diagnostic_rows,hide_index=True)
         st.download_button('미연결 빈집 CSV',excluded.to_csv(index=False).encode('utf-8-sig'),'excluded.csv')
-if disabled:
-    st.warning('내부 변수가 모두 상수인 요인: '+', '.join(disabled)+'. 양의 가중치가 있는 해당 유형은 미산정한다. 공통 순위는 세 유형이 산출 가능할 때만 표시한다.')
 category=st.radio('독립 평가 유형',['A','B','C'],horizontal=True)
-settings={'model':'report_v3','interface':'v4','upload_mode':upload_mode,'police_mode':police_mode,'amenity_mode':amenity_mode,'radius_km':.75,'tourism_K':7,'month':sales_month,'weights':weights,
- 'logs':logs,'sources':sources,'common_N':len(result),'rank':'competition','percentile':'midrank',
- 'constant_policy':'exclude within factor; block if factor empty'}
+settings={'model':MODEL_VERSION,'interface':'v5','upload_mode':upload_mode,'police_mode':police_mode,
+ 'amenity_mode':amenity_mode,'dorm_mode':dorm_mode,'radii_km':RADII,'p90':P90,'month':sales_month,
+ 'weights':weights,'default_weights':DEFAULT_WEIGHTS,'logs':[],'sources':sources,'common_N':len(result),
+ 'rank':'competition','percentile':'midrank','factor_range':[0,1],'final_score_range':[0,100],
+ 'dorm_formula':'sum_within_3km(max(dorm_app-dorm_cap,0))/661 capped at 1',
+ 'distance_bins':'<=750m:1; <=1500m:.75; <=2250m:.5; <=3000m:.25; >3000m:0'}
 signature=hashlib.sha256(json.dumps([settings,category],ensure_ascii=False,sort_keys=True).encode()).hexdigest()
 if st.session_state.get('signature')!=signature:
     st.session_state.signature=signature; st.session_state.selected=None
@@ -268,16 +298,17 @@ else:
     extent=max(.75,float(facility.distance_km.max()) if len(facility) else .75)
     st.pydeck_chart(chart(layers,row.latitude,row.longitude,float(np.clip(np.log2(16000/extent),2,15))),height=600)
     st.markdown(legend_html(),unsafe_allow_html=True)
-    st.caption('평가에 사용한 750m 내 집계시설 또는 최근접 시설을 표시한다.')
+    st.caption('관광지 1.5km · 기숙사 3km · 유무/개수 시설 750m · 거리 단계 시설은 최근접 시설을 표시한다.')
     factors=TYPES[category]
-    st.dataframe(pd.DataFrame({'요인':[FACTOR_NAMES[f] for f in factors],'점수':[row[f] for f in factors],
-        '가중치':weights[category],'기여점수':[row[f]*w for f,w in zip(factors,weights[category])]}),hide_index=True)
-    if category=='A': st.write(f'행정동 {row.admin_key} / 방문 {row.visitors:,.2f} / 매출 {row.sales:,.2f} / {sales_month}')
+    st.dataframe(pd.DataFrame({'요인':[FACTOR_NAMES[f] for f in factors],'점수 (0~1)':[row[f] for f in factors],
+        '가중치':weights[category],'기여점수 (100점 기준)':[100*row[f]*w for f,w in zip(factors,weights[category])]}),hide_index=True)
+    if category=='A': st.write(f'행정동 {row.admin_key} / 관광업종 매출밀도 {row.sales_den:,.2f} / 기준월 {sales_month or "파일에 없음"}')
+    if category=='C': st.write(f'3km 내 기숙사 미충족 인원 합계 {row.dorm_unmet:,.0f}명')
     st.dataframe(facility,hide_index=True)
 st.subheader('유형별 점수·공동순위·백분위')
 columns=['house_id','admin_key']+[f'{c}_{field}' for c in TYPES for field in ['score','rank','percentile']]
 st.dataframe(result[columns].sort_values(f'{category}_rank'),hide_index=True)
-with st.expander('동일가중치 대비 순위 변화'):
+with st.expander('확정 기본 가중치 대비 순위 변화'):
     st.dataframe(result[['house_id']+[f'{c}_{f}' for c in TYPES for f in ['baseline','baseline_rank','rank_change']]],hide_index=True)
 st.download_button('전체 계산 결과 CSV',result.to_csv(index=False).encode('utf-8-sig'),'report_scores.csv')
 st.download_button('분석 설정 JSON',json.dumps(settings,ensure_ascii=False,indent=2),'analysis_settings.json')

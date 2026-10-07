@@ -13,8 +13,8 @@ KEYWORDS={
  'fire':['소방','119','fire'],'store':['편의점','store'],'mart':['마트','mart'],'pharmacy':['약국','pharmacy'],
  'amenities':['편의시설','생활편의','amenities'],'industry':['산업단지','산단','industry'],
  'daycare':['어린이집','유치원','daycare','kindergarten'],'school':['초등','school'],
- 'university':['대학교','대학','university'],'library':['도서관','library'],'sports':['운동','체육','sports'],
- 'visitors':['방문','방문자','유동','visitor'],'sales':['매출','소비','sales']}
+ 'university':['대학교','대학','university'],
+ 'dorm':['기숙사','dorm'],'sales':['매출밀도','sales_den','관광매출','매출','소비','sales']}
 
 def first_match(values,keywords):
     for value in values:

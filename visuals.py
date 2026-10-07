@@ -8,14 +8,15 @@ GROUPS={
  '교통':('#01A8AF',['bus','subway','parking']),
  '생활편의':('#58B368',['store','mart','pharmacy']),
  '안전':('#E65373',['cctv','police','fire']),
- '대학·학습·체육':('#8A63D2',['library','sports','university']),
+ '대학·기숙사':('#8A63D2',['university','dorm']),
  '산업·보육·교육':('#D89B24',['industry','daycare','school']),
  '관광':('#FA6C41',['attraction'])}
 COLORS={kind:color for color,kinds in GROUPS.values() for kind in kinds}
 
 @lru_cache(maxsize=32)
 def icon_url(kind):
-    png=base64.b64encode((Path(__file__).parent/'assets'/f'{kind}.png').read_bytes()).decode()
+    asset='university' if kind=='dorm' else kind
+    png=base64.b64encode((Path(__file__).parent/'assets'/f'{asset}.png').read_bytes()).decode()
     color=COLORS[kind]
     # UI-only SVG filter: remove white background, retain original alpha, tint dark ink.
     svg=f'''<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
